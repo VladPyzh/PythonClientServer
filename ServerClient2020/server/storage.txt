@@ -1,0 +1,1 @@
+{"car": 6, "byke": 89, "engine": 0, "toilet_paper": -1, "tank": 9}
