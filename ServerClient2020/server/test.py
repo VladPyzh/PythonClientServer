@@ -3,7 +3,9 @@ import json
 from my_server import change_status, storage_reader, read_mails
 from json_writer import writter
 
-# important to check file on content beofre
+
+# important to check file on content before
+writter()
 
 
 class TestServer(unittest.TestCase):
@@ -24,8 +26,3 @@ class TestServer(unittest.TestCase):
         with open("statuses.txt", "r") as f:
             statuses = json.loads(f.read())
             self.assertEqual(123, statuses["Test"])
-
-
-if __name__ == '__main__':
-    writter()
-    unittest.main()

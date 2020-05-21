@@ -3,9 +3,6 @@ import requests
 from time import sleep
 
 
-address = ""
-
-
 def order_reader():
     goods = input()
     if goods == "exit":
@@ -17,7 +14,7 @@ def order_reader():
         print("Bad input. Try again")
         return "continue"
     if len(goods) != 2 or type(goods[1]) is not int or goods[1] < 1:
-        print("     something is wrong, try again")
+        print("\tsomething is wrong, try again")
         return "continue"
     return goods
 
@@ -38,16 +35,14 @@ def epic_exit():
     exit()
 
 
-
-def test():
-    return requests.get(address + "/test").text
+def test(server_address):
+    return requests.get(server_address + "/test").text
 
 
 def main_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="localhost")
-    parser.add_argument("--port", default="8888", type=int)
+    parser.add_argument("--port", default="8000", type=int)
     args = parser.parse_args()
-    global address
-    address = ("http://" + args.host + ":" + str(args.port) + "/")
-    return address
+    server_address = ("http://" + args.host + ":" + str(args.port) + "/")
+    return server_address

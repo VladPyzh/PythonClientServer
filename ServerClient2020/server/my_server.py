@@ -15,7 +15,7 @@ def change_status(id, changes=1):
         statuses = json.loads(f.read())
         f.close()
     except (json.decoder.JSONDecodeError, FileNotFoundError):
-        statuses = dict()
+        statuses = {}
 
     f = open("statuses.txt", "w")
 
@@ -68,7 +68,7 @@ def check():
     try:
         return str(storage[vender_code])
     except KeyError:
-        return "-401"
+        return "-1"
 
 
 @app.route("/ask_store", methods=["GET"])
@@ -86,7 +86,7 @@ def create_order():
     storage = storage_reader()
     for i in order:
         if storage[i] < int(order[i]):
-            return "-402"
+            return "too_much_items"
         storage[i] -= int(order[i])
 
     f = open("storage.txt", "w")
@@ -99,7 +99,7 @@ def create_order():
         order_id = "id" + str(len(orders_list))
         f.close()
     except TypeError:
-        orders_list = dict()
+        orders_list = {}
         order_id = "id0"
 
     orders_list[order_id] = order
@@ -112,8 +112,8 @@ def create_order():
 
 @app.route("/get_status", methods=["GET"])
 def get_status():
-    id = str(flask.request.args["id"])
-    mail = read_mails(id)
+    item_id = str(flask.request.args["id"])
+    mail = read_mails(item_id)
     if mail != "nothing":
         return mail
     f = open("statuses.txt", "r")
@@ -122,7 +122,7 @@ def get_status():
     except (json.decoder.JSONDecodeError, FileNotFoundError):
         return "We don't have orders with that id. :( \n"
     try:
-        status = statuses[id]
+        status = statuses[item_id]
         try:
             return status_dict[status]
         except KeyError:
@@ -173,7 +173,7 @@ def add_mail():
         mails = json.loads(f.read())
         f.close()
     except (json.decoder.JSONDecodeError, FileNotFoundError, TypeError):
-        mails = dict()
+        mails = {}
 
     mails[id] = "Sorry, we lost your order. ¯\_(ツ)_/¯"
     f = open("mail.txt", "w")
@@ -183,14 +183,8 @@ def add_mail():
 
 
 def main():
-    app.run("::", port=8888, debug=True)
+    app.run("::", port=8000, debug=True)
 
 
 if __name__ == "__main__":
     main()
-
-# Mystakes code:
-#
-# -401 Asking for bad vender code
-# -402 Trying to buy more than possible
-#
