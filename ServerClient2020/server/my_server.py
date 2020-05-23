@@ -1,31 +1,40 @@
 import flask
 import json
+from collections import defaultdict
+from config import Config_strings
+from handlers import Handlers
 
-app = flask.Flask("buy_and_deliver")
+app = flask.Flask(Config_strings.name)
 status_dict = {1: "In stock", 2: "On road", 3: "It's ready!"}
 
 
-def change_status(id, changes=1):
+def read_json(file_name):
+    f = open(file_name, "r")
+    obj = json.loads(f.read())
+    f.close()
+    return obj
+
+
+def write_json(file_name, obj):
+    f = open(file_name, "w")
+    f.write(json.dumps(obj))
+    f.close()
+
+
+def change_status(item_id, changes=1):
     try:
         changes = int(changes)
     except ValueError:
         return False
     try:
-        f = open("statuses.txt", "r")
-        statuses = json.loads(f.read())
-        f.close()
+        statuses = read_json("statuses.txt")
     except (json.decoder.JSONDecodeError, FileNotFoundError):
         statuses = {}
 
-    f = open("statuses.txt", "w")
+    statuses = defaultdict(int, statuses)
+    statuses[item_id] += changes
 
-    try:
-        statuses[id] += changes
-    except KeyError:
-        statuses[id] = changes
-
-    f.write(json.dumps(statuses))
-    f.close()
+    write_json("statuses.txt", statuses)
 
     return True
 
@@ -35,33 +44,28 @@ def storage_reader():
         storage = json.loads(f.read())
         f.close()
         return storage
-    return {}
 
 
-def read_mails(id):
+def read_mails(order_id):
     try:
-        f = open("mail.txt", "r")
-        mails = json.loads(f.read())
-        f.close()
+        mails = read_json("mail.txt")
         try:
-            ans = mails[id]
-            f = open("mail.txt", "w")
-            del mails[id]
-            f.write(json.dumps(mails))
-            f.close()
+            ans = mails[order_id]
+            del mails[order_id]
+            write_json("mail.txt", mails)
             return ans
         except (IndexError, KeyError):
-            return "nothing"
-    except (json.decoder.JSONDecodeError, FileNotFoundError, IndexError):
-        return "nothing"
+            return Config_strings.nothing
+    except (json.decoder.JSONDecodeError, FileNotFoundError):
+        return Config_strings.nothing
 
 
-@app.route("/test", methods=["GET"])
+@app.route(Handlers.test, methods=["GET"])
 def test():
-    return "works"
+    return Config_strings.test_answer
 
 
-@app.route("/check", methods=["GET"])
+@app.route(Handlers.check, methods=["GET"])
 def check():
     storage = storage_reader()
     vender_code = str(flask.request.args["id"])
@@ -71,13 +75,13 @@ def check():
         return "-1"
 
 
-@app.route("/ask_store", methods=["GET"])
+@app.route(Handlers.ask_store, methods=["GET"])
 def ask_store():
     storage = storage_reader()
     return str(storage)
 
 
-@app.route("/create_order", methods=["POST"])
+@app.route(Handlers.create_order, methods=["POST"])
 def create_order():
     order = {
         item: flask.request.args[item]
@@ -86,104 +90,90 @@ def create_order():
     storage = storage_reader()
     for i in order:
         if storage[i] < int(order[i]):
-            return "too_much_items"
+            return Config_strings.too_much_items
         storage[i] -= int(order[i])
 
-    f = open("storage.txt", "w")
-    f.write(json.dumps(storage))
-    f.close()
+    write_json("storage.txt", storage)
 
     try:
-        f = open("orders-list.txt", "r")
-        orders_list = json.loads(f.read())
+        orders_list = read_json("orders-list.txt")
         order_id = "id" + str(len(orders_list))
-        f.close()
-    except TypeError:
+    except (json.decoder.JSONDecodeError, FileNotFoundError):
         orders_list = {}
         order_id = "id0"
 
     orders_list[order_id] = order
-    f = open("orders-list.txt", "w")
-    f.write(json.dumps(orders_list))
-
+    write_json("orders-list.txt", orders_list)
     change_status(order_id)
     return order_id
 
 
-@app.route("/get_status", methods=["GET"])
+@app.route(Handlers.get_status, methods=["GET"])
 def get_status():
     item_id = str(flask.request.args["id"])
     mail = read_mails(item_id)
-    if mail != "nothing":
+    if mail != Config_strings.nothing:
         return mail
-    f = open("statuses.txt", "r")
     try:
-        statuses = json.loads(f.read())
+        statuses = read_json("statuses.txt")
     except (json.decoder.JSONDecodeError, FileNotFoundError):
-        return "We don't have orders with that id. :( \n"
+        return Config_strings.dont_have_order
+
     try:
         status = statuses[item_id]
         try:
             return status_dict[status]
         except KeyError:
-            return "There is something wrong with your order \n" \
-                   "Calls us!"
+            return Config_strings.better_call
     except KeyError:
-        return "We don't have orders with that id. :("
+        return Config_strings.dont_have_order
 
 
 ###stock service part###
 
 
-@app.route("/change_store", methods=["POST"])
+@app.route(Handlers.change_store, methods=["POST"])
 def change_store():
     changes = {
         item: flask.request.args[item]
         for item in flask.request.args
     }
     storage = storage_reader()
+    storage = defaultdict(int, storage)
     for i in changes:
-        try:
-            storage[i] += int(changes[i])
-        except KeyError:
-            storage[i] = int(changes[i])
+        storage[i] += int(changes[i])
 
-    f = open("storage.txt", "w")
-    f.write(json.dumps(storage))
-    f.close()
-    return "changed!"
+    write_json("storage.txt", storage)
+    return Config_strings.changed
 
 
-@app.route("/change_status", methods=["POST"])
+@app.route(Handlers.change_status, methods=["POST"])
 def adm_change_status():
-    id = flask.request.args["id"]
+    item_id = flask.request.args["id"]
     value = flask.request.args["value"]
     value = int(value)
-    if change_status(id, value):
-        return "changed!"
+    if change_status(item_id, value):
+        return Config_strings.changed
     else:
         return ""
 
 
-@app.route("/mail", methods=["POST"])
+@app.route(Handlers.mail, methods=["POST"])
 def add_mail():
-    id = str(flask.request.args["id"])
+    item_id = str(flask.request.args["id"])
     try:
-        f = open("mail.txt", "r")
-        mails = json.loads(f.read())
-        f.close()
-    except (json.decoder.JSONDecodeError, FileNotFoundError, TypeError):
+        mails = read_json("mail.txt")
+    except (json.decoder.JSONDecodeError, FileNotFoundError):
         mails = {}
 
-    mails[id] = "Sorry, we lost your order. ¯\_(ツ)_/¯"
-    f = open("mail.txt", "w")
-    f.write(json.dumps(mails))
-    f.close()
-    return "The letter was sent"
+    mails[item_id] = Config_strings.polite_mail
+    write_json("mail.txt", mails)
+    return Config_strings.sent
 
 
 def main():
-    app.run("::", port=8000, debug=True)
+    port = int(input())
+    app.run("::", port=port, debug=True)
 
 
 if __name__ == "__main__":

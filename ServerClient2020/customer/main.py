@@ -1,5 +1,8 @@
 import requests
 import sys
+import ast
+from config import Config_strings
+from handlers import Handlers
 
 
 sys.path.append('../')
@@ -10,60 +13,57 @@ server_address = ""
 
 
 def check_how_much_we_have(item_id):
-    return requests.get(server_address + "/check", params=dict(id=item_id)).text
+    return requests.get(server_address + Handlers.check, params=dict(id=item_id)).text
 
 
 def ask_store():
-    store = requests.get(server_address + "/ask_store").text
-    print("\tToday we have:")
+    store = requests.get(server_address + Handlers.ask_store).text
+    print(Config_strings.list_start)
     dont_have = []
     list_to_buy = []
-    store = eval(store)
+    store = ast.literal_eval(store)
     for i in store:
         if store[i] > 0:
-            print("\t", i, store[i])
+            print("\t\t", i, store[i])
         elif store[i] == 0:
             list_to_buy.append(i)
         else:
             dont_have.append(i)
-    print("\tProbably we will have these soon:")
-    for i in list_to_buy:
-        print("\t", i)
-    print("\tSorry, we are out of these:")
-    for i in dont_have:
-        print("\t", i)
+    print(Config_strings.will_have, *list_to_buy, sep='\n\t\t ')
+    print(Config_strings.out_of_these, *dont_have, sep='\n\t\t ')
+    print("\n")
 
 
 def create_order():
     order = {}
-    print("\tI need vendor code and amount (xxxx <amount>) \n\tType exit if you're ready")
+    print(Config_strings.create_order_greetings)
     while True:
         goods = order_reader()
-        if goods == "exit":
+        if goods == Config_strings.exit:
             break
-        if goods == "continue":
+        if goods == Config_strings.cont:
             continue
         if int(check_how_much_we_have(str(goods[0]))) < goods[1]:
-            print("\tWe don't have so much or we don't have that at all! Try again or print exit")
+            print(Config_strings.dont_have)
             continue
         order[goods[0]] = goods[1]
-        print("\tNow your order looks so: \n {} \n\tType exit if you're ready".format(order))
+        print(Config_strings.order_looks.format(order))
     if order:
-        order_id = requests.post(server_address + "/create_order", params=order).text
-        if order_id == "too_much_items":
-            print("Somehow you decided to buy more than possible :(")
+        order_id = requests.post(server_address + Handlers.create_order, params=order).text
+        if order_id == Config_strings.too_much:
+            print(Config_strings.more_than_possible)
         else:
-            print("\tYour order ID is {}".format(order_id))
+            print(Config_strings.order_id.format(order_id))
         return
 
 
 def get_status():
-    print("\tType ID or exit")
+    print(Config_strings.get_status_greetings)
     item_id = input()
-    if item_id == "exit":
+    if item_id == Config_strings.exit:
         return
     else:
-        ans = requests.get(server_address + "/get_status", params=dict(id=item_id)).text
+        ans = requests.get(server_address + Handlers.get_status, params=dict(id=item_id)).text
         print(ans)
         return ans
 
@@ -72,32 +72,28 @@ def main():
     global server_address
     server_address = main_parser()
     try:
-        if test() == "works":
-            print("We are online! \n")
+        if test(server_address) == Config_strings.works:
+            print(Config_strings.online)
         else:
-            print("Something is wrong with connection \n")
+            print(Config_strings.smth_wrong)
             return
     except:
-        print("Connection gone wrong")
+        print(Config_strings.bad_connection)
         return
     while True:
-        print("Type one of these commads: \n"
-              "status -- take status of your order \n"
-              "create -- create new order \n"
-              "store -- ask for what we have in our store \n"
-              "exit -- exit")
+        print(Config_strings.main_greetings)
         try:
-            cmd = input("Enter command>")
-            if cmd == "status":
+            cmd = input(Config_strings.command)
+            if cmd == Config_strings.status:
                 get_status()
-            elif cmd == "create":
+            elif cmd == Config_strings.create:
                 create_order()
-            elif cmd == "store":
+            elif cmd == Config_strings.store:
                 ask_store()
-            elif cmd == "exit":
+            elif cmd == Config_strings.exit:
                 simple_exit()
             else:
-                print("Input is incorrect, go again")
+                print(Config_strings.bad_input)
         except (KeyboardInterrupt, EOFError):
             simple_exit()
 

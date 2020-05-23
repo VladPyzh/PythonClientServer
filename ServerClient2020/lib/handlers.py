@@ -1,0 +1,2 @@
+class Handlers():
+    test = "/test"
