@@ -1,10 +1,12 @@
 import requests
 import sys
 from config import Config_strings
-from handlers import Handlers
+
 
 sys.path.append('../')
+from handlers import Handlers
 from lib.utility import main_parser, test, epic_exit, simple_exit, order_reader
+
 
 server_address = ""
 

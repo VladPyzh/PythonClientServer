@@ -1,8 +1,13 @@
 import flask
 import json
+import sys
 from collections import defaultdict
 from config import Config_strings
+
+
+sys.path.append('../')
 from handlers import Handlers
+
 
 app = flask.Flask(Config_strings.name)
 status_dict = {1: "In stock", 2: "On road", 3: "It's ready!"}

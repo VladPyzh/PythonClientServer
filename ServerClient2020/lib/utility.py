@@ -1,8 +1,12 @@
 import argparse
 import requests
+import sys
 from time import sleep
 from lib.config import Config_strings
-from lib.handlers import Handlers
+
+
+sys.path.append('../')
+from handlers import Handlers
 
 
 def order_reader():

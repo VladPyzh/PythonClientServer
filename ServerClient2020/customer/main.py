@@ -2,10 +2,10 @@ import requests
 import sys
 import ast
 from config import Config_strings
-from handlers import Handlers
 
 
 sys.path.append('../')
+from handlers import Handlers
 from lib.utility import main_parser, test, simple_exit, order_reader
 
 
