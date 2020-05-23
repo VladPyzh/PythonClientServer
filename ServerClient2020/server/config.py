@@ -9,3 +9,6 @@ class Config_strings():
     changed = "changed!"
     polite_mail = "Sorry, we lost your order. ¯\_(ツ)_/¯"
     sent = "The letter was sent"
+
+
+status_dict = {"1": "In stock", "2": "On road", "3": "It's ready!"}

@@ -2,7 +2,7 @@ import flask
 import json
 import sys
 from collections import defaultdict
-from config import Config_strings
+from config import Config_strings, status_dict
 
 
 sys.path.append('../')
@@ -10,7 +10,7 @@ from handlers import Handlers
 
 
 app = flask.Flask(Config_strings.name)
-status_dict = {1: "In stock", 2: "On road", 3: "It's ready!"}
+
 
 
 def read_json(file_name):
@@ -125,7 +125,7 @@ def get_status():
         return Config_strings.dont_have_order
 
     try:
-        status = statuses[item_id]
+        status = str(statuses[item_id])
         try:
             return status_dict[status]
         except KeyError:

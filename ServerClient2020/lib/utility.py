@@ -47,8 +47,8 @@ def test(server_address):
 
 def main_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--host", default="localhost")
-    parser.add_argument("--port", default="8000", type=int)
+    parser.add_argument("--host")
+    parser.add_argument("--port", type=int)
     args = parser.parse_args()
     server_address = ("http://" + args.host + ":" + str(args.port) + "/")
     return server_address
